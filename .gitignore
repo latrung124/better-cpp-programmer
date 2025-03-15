@@ -1,0 +1,22 @@
+#ignore built files
+
+*.exe
+*.dll
+*.pdb
+*.user
+*.suo
+*.ilk
+*.aps
+*.cache
+*.log
+*.vspscc
+*.vssscc
+
+#ignore directories
+
+.vscode/*
+bin
+obj
+Debug
+Release
+_Temp
