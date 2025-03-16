@@ -20,8 +20,9 @@
  */
 
 #include <iostream>
+#include <typeindex>
 #include <functional>
-#include <map>
+#include <unordered_map>
 #include <memory>
 
 class ServiceMessage 
@@ -31,34 +32,60 @@ public:
     virtual void operation() const = 0;
 };
 
-class ConcreateServiceMessageA : public ServiceMessage
+class ConcreteServiceMessageA : public ServiceMessage
 {
 public:
-    void operation() const override { std::cout << "ConcreateServiceMessageA operation()!" << std::endl; }
+    void operation() const override { std::cout << "ConcreteServiceMessageA operation()!" << std::endl; }
 };
 
-class ConcreateServiceMessageB : public ServiceMessage
+class ConcreteServiceMessageB : public ServiceMessage
 {
 public:
-    void operation() const override { std::cout << "ConcreateServiceMessageB operation()!" << std::endl; }
+    void operation() const override { std::cout << "ConcreteServiceMessageB operation()!" << std::endl; }
+};
+
+class Producer
+{
+public:
+    virtual ~Producer() = default;
+    virtual std::unique_ptr<ServiceMessage> createServiceMessage() const = 0;
+};
+
+class ConcreteProducerA : public Producer
+{
+public:
+    std::unique_ptr<ServiceMessage> createServiceMessage() const override {
+        return std::make_unique<ConcreteServiceMessageA>();
+    }
+};
+
+class ConcreteProducerB : public Producer
+{
+public:
+    std::unique_ptr<ServiceMessage> createServiceMessage() const override {
+        return std::make_unique<ConcreteServiceMessageB>();
+    }
 };
 
 class ModernFactory
 {
 private:
-    using CreationFunc = std::function<std::unique_ptr<ServiceMessage>()>;
-    std::unordered_map<std::string, CreationFunc> m_creators;
+    using CreationFunc = std::function<std::unique_ptr<Producer>()>;
+    std::unordered_map<std::type_index, CreationFunc> m_creators;
 
 public:
-    template <typename ServiceMessageType>
-    void registerServiceMessage(std::string const &type) {
-        m_creators[type] = []() { return std::make_unique<ServiceMessageType>(); };
+    template <typename ConcreteProducer>
+    void registerServiceMessage() {
+        std::type_index type = std::type_index(typeid(ConcreteProducer));
+        m_creators[type] = []() { return std::make_unique<ConcreteProducer>(); };
     }
 
-    std::unique_ptr<ServiceMessage> createServiceMessage(std::string const &type) const {
+    template <typename ConcreteProducer>
+    std::unique_ptr<ServiceMessage> createServiceMessage() const {
+        std::type_index type = std::type_index(typeid(ConcreteProducer));
         auto it = m_creators.find(type);
         if (it != m_creators.end()) {
-            return it->second();
+            return it->second()->createServiceMessage();
         }
         return nullptr;
     }
@@ -67,13 +94,13 @@ public:
 int main() {
     std::cout << "======Factory Design Pattern======" << std::endl;
     ModernFactory modernFactory;
-    modernFactory.registerServiceMessage<ConcreateServiceMessageA>("A");
-    modernFactory.registerServiceMessage<ConcreateServiceMessageB>("B");
+    modernFactory.registerServiceMessage<ConcreteProducerA>();
+    modernFactory.registerServiceMessage<ConcreteProducerB>();
 
-    auto const messageA = modernFactory.createServiceMessage("A");
+    auto const messageA = modernFactory.createServiceMessage<ConcreteProducerA>();
     messageA->operation();
 
-    auto const messageB = modernFactory.createServiceMessage("B");
+    auto const messageB = modernFactory.createServiceMessage<ConcreteProducerB>();
     messageB->operation();
 
     return EXIT_SUCCESS;
