@@ -1,0 +1,70 @@
+@startuml
+class Looper {
+  - mThreadId: pthread_t
+  - mMessageQueue: queue<Message*>
+  - mRequests: map<int, Request>
+  - mMutex: mutex
+  - mCondition: condition_variable
+  - mMessageAvailable: bool
+  - mEpollFd: int
+  - mWakeReadPipeFd: int
+  - mWakeWritePipeFd: int
+  + getForThread(): Looper*
+  + prepare()
+  + loop()
+  + quit()
+  + post(Message*)
+  + addFd(int, int, int, function<int(int, int, void*)>, void*)
+  + removeFd(int)
+  + pollOnce(int)
+  + wake()
+  + getThreadId(): pthread_t
+  + ~Looper()
+}
+
+class Message {
+  - mWhat: int
+  - mArg1: int
+  - mArg2: int
+  - mObj: void*
+  - mCallback: function<void()>
+  - mHandler: MessageHandler*
+  - mWhen: int64_t
+  + obtain(): Message*
+  + recycle()
+  + setWhat(int)
+  + what(): int
+  + setArg1(int)
+  + arg1(): int
+  + setArg2(int)
+  + arg2(): int
+  + setObj(void*)
+  + obj(): void*
+  + setCallback(function<void()>)
+  + callback(): function<void()>
+  + setHandler(MessageHandler*)
+  + handler(): MessageHandler*
+  + setWhen(int64_t)
+  + when(): int64_t
+}
+
+class MessageHandler {
+  - mLooper: Looper*
+  + MessageHandler()
+  + MessageHandler(Looper*)
+  + ~MessageHandler()
+  + sendMessage(Message*)
+  + sendMessageDelayed(Message*, int64_t)
+  + post(function<void()>)
+  + postDelayed(function<void()>, int64_t)
+  + handleMessage(Message*)
+  + dispatchMessage(Message*)
+  + getLooper(): Looper*
+}
+
+' Relationships
+Looper o-- "many" Message : manages
+MessageHandler o-- "1" Looper : uses
+Message --> "1" MessageHandler : handled by
+
+@enduml

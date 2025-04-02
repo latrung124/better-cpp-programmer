@@ -1,0 +1,31 @@
+@startuml
+participant MessageHandler
+participant Looper
+participant Message
+
+MessageHandler -> Looper: post(Message*)
+activate Looper
+Looper -> Looper: lock mutex
+Looper -> Looper: push to mMessageQueue
+Looper -> Looper: unlock mutex
+Looper -> Looper: notify_one()
+Looper -> Looper: wake()
+deactivate Looper
+
+' Inside loop()
+Looper -> Looper: pollOnce(-1)
+activate Looper
+Looper -> Looper: processNextMessage(-1)
+Looper -> Looper: wait (if no message)
+' Assume message is available
+Looper -> Looper: pop Message* from mMessageQueue
+deactivate Looper
+
+Looper -> Message: dispatchMessage(Message*)
+activate Message
+Message -> MessageHandler: handleMessage(Message*)
+activate MessageHandler
+MessageHandler -> MessageHandler: [process message]
+deactivate MessageHandler
+deactivate Message
+@enduml
