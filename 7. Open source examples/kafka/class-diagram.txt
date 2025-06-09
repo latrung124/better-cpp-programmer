@@ -1,0 +1,239 @@
+@startuml
+!define KAFKA_COLOR #E6F3FF
+!define SERVICE_COLOR #F0F8E6
+!define MODEL_COLOR #FFF2E6
+!define HANDLER_COLOR #F5F0FF
+
+package "User Profile Service" {
+    
+    ' Main Service Class
+    class UserProfileService <<SERVICE_COLOR>> {
+        - kafkaProducer: KafkaMessageProducer
+        - kafkaConsumer: KafkaMessageConsumer
+        - userRepository: UserRepository
+        - eventHandlers: map<string, EventHandler>
+        --
+        + UserProfileService(config: ServiceConfig)
+        + start(): void
+        + stop(): void
+        + createUser(userData: UserData): User
+        + updateUser(userId: string, userData: UserData): User
+        + deleteUser(userId: string): bool
+        + getUser(userId: string): User
+        - publishUserEvent(event: UserEvent): void
+        - handleIncomingEvent(message: Message): void
+    }
+    
+    ' Domain Models
+    class User <<MODEL_COLOR>> {
+        - id: string
+        - email: string
+        - firstName: string
+        - lastName: string
+        - profilePicture: string
+        - createdAt: timestamp
+        - updatedAt: timestamp
+        --
+        + User(userData: UserData)
+        + toJson(): string
+        + fromJson(json: string): User
+        + validate(): bool
+    }
+    
+    class UserData <<MODEL_COLOR>> {
+        + email: string
+        + firstName: string
+        + lastName: string
+        + profilePicture: string
+        --
+        + validate(): bool
+        + toJson(): string
+    }
+    
+    ' Events
+    abstract class UserEvent <<MODEL_COLOR>> {
+        # userId: string
+        # timestamp: timestamp
+        # eventType: EventType
+        --
+        + {abstract} serialize(): string
+        + {abstract} deserialize(data: string): void
+        + getEventType(): EventType
+    }
+    
+    class UserCreatedEvent <<MODEL_COLOR>> {
+        - userData: UserData
+        --
+        + UserCreatedEvent(userId: string, userData: UserData)
+        + serialize(): string
+        + deserialize(data: string): void
+    }
+    
+    class UserUpdatedEvent <<MODEL_COLOR>> {
+        - oldData: UserData
+        - newData: UserData
+        --
+        + UserUpdatedEvent(userId: string, oldData: UserData, newData: UserData)
+        + serialize(): string
+        + deserialize(data: string): void
+    }
+    
+    class UserDeletedEvent <<MODEL_COLOR>> {
+        --
+        + UserDeletedEvent(userId: string)
+        + serialize(): string
+        + deserialize(data: string): void
+    }
+    
+    ' Repository
+    class UserRepository <<SERVICE_COLOR>> {
+        - database: Database
+        --
+        + save(user: User): bool
+        + findById(id: string): User
+        + findByEmail(email: string): User
+        + update(user: User): bool
+        + delete(id: string): bool
+        + exists(id: string): bool
+    }
+}
+
+package "Kafka Integration" <<KAFKA_COLOR>> {
+    
+    ' Kafka Producer
+    class KafkaMessageProducer <<KAFKA_COLOR>> {
+        - producer: cppkafka::Producer
+        - config: cppkafka::Configuration
+        --
+        + KafkaMessageProducer(brokers: string)
+        + publishEvent(topic: string, event: UserEvent): void
+        + publishMessage(topic: string, key: string, payload: string): void
+        + flush(): void
+        + close(): void
+    }
+    
+    ' Kafka Consumer
+    class KafkaMessageConsumer <<KAFKA_COLOR>> {
+        - consumer: cppkafka::Consumer
+        - config: cppkafka::Configuration
+        - running: bool
+        --
+        + KafkaMessageConsumer(brokers: string, groupId: string)
+        + subscribe(topics: vector<string>): void
+        + startConsuming(handler: MessageHandler): void
+        + stopConsuming(): void
+        + commit(message: cppkafka::Message): void
+    }
+    
+    ' Message Handler Interface
+    interface MessageHandler <<KAFKA_COLOR>> {
+        + handleMessage(message: Message): void
+    }
+    
+    class Message <<KAFKA_COLOR>> {
+        - topic: string
+        - key: string
+        - payload: string
+        - partition: int
+        - offset: long
+        --
+        + getTopic(): string
+        + getKey(): string
+        + getPayload(): string
+        + getPartition(): int
+        + getOffset(): long
+    }
+}
+
+package "Event Handlers" <<HANDLER_COLOR>> {
+    
+    ' Event Handler Interface
+    interface EventHandler <<HANDLER_COLOR>> {
+        + handle(event: UserEvent): void
+        + canHandle(eventType: EventType): bool
+    }
+    
+    ' Specific Event Handlers
+    class OrderServiceEventHandler <<HANDLER_COLOR>> {
+        - orderServiceClient: OrderServiceClient
+        --
+        + handle(event: UserEvent): void
+        + canHandle(eventType: EventType): bool
+        - notifyOrderService(event: UserEvent): void
+    }
+    
+    class NotificationEventHandler <<HANDLER_COLOR>> {
+        - notificationService: NotificationServiceClient
+        --
+        + handle(event: UserEvent): void
+        + canHandle(eventType: EventType): bool
+        - sendWelcomeEmail(userCreatedEvent: UserCreatedEvent): void
+        - sendProfileUpdateNotification(userUpdatedEvent: UserUpdatedEvent): void
+    }
+    
+    class AuditEventHandler <<HANDLER_COLOR>> {
+        - auditLogger: AuditLogger
+        --
+        + handle(event: UserEvent): void
+        + canHandle(eventType: EventType): bool
+        - logUserActivity(event: UserEvent): void
+    }
+}
+
+package "Configuration" {
+    class ServiceConfig <<SERVICE_COLOR>> {
+        + kafkaBrokers: string
+        + kafkaGroupId: string
+        + databaseUrl: string
+        + topicNames: TopicConfig
+        --
+        + loadFromFile(filename: string): ServiceConfig
+        + validate(): bool
+    }
+    
+    class TopicConfig <<SERVICE_COLOR>> {
+        + userEvents: string
+        + orderEvents: string
+        + notificationEvents: string
+        + auditEvents: string
+    }
+}
+
+' Enums
+enum EventType <<MODEL_COLOR>> {
+    USER_CREATED
+    USER_UPDATED
+    USER_DELETED
+}
+
+' Relationships
+UserProfileService --> KafkaMessageProducer : uses
+UserProfileService --> KafkaMessageConsumer : uses
+UserProfileService --> UserRepository : uses
+UserProfileService --> User : manages
+UserProfileService --> UserEvent : publishes
+UserProfileService --> EventHandler : uses
+
+User --> UserData : contains
+UserEvent <|-- UserCreatedEvent
+UserEvent <|-- UserUpdatedEvent
+UserEvent <|-- UserDeletedEvent
+
+UserCreatedEvent --> UserData : contains
+UserUpdatedEvent --> UserData : contains
+
+KafkaMessageProducer --> UserEvent : serializes
+KafkaMessageConsumer --> MessageHandler : uses
+KafkaMessageConsumer --> Message : produces
+
+MessageHandler <|.. UserProfileService : implements
+EventHandler <|.. OrderServiceEventHandler : implements
+EventHandler <|.. NotificationEventHandler : implements
+EventHandler <|.. AuditEventHandler : implements
+
+UserEvent --> EventType : has
+
+ServiceConfig --> TopicConfig : contains
+UserProfileService --> ServiceConfig : uses
+
+@enduml

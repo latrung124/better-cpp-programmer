@@ -1,0 +1,201 @@
+@startuml
+!define CLIENT_COLOR #E6F7FF
+!define SERVICE_COLOR #F0F8E6
+!define KAFKA_COLOR #FFE6E6
+!define HANDLER_COLOR #F5F0FF
+!define DB_COLOR #FFF2E6
+
+title User Profile Service with Kafka - Sequence Diagram
+
+actor "API Client" as Client <<CLIENT_COLOR>>
+participant "UserProfileService" as UPS <<SERVICE_COLOR>>
+participant "UserRepository" as Repo <<DB_COLOR>>
+database "Database" as DB <<DB_COLOR>>
+participant "KafkaProducer" as Producer <<KAFKA_COLOR>>
+queue "Kafka Broker" as Kafka <<KAFKA_COLOR>>
+participant "KafkaConsumer" as Consumer <<KAFKA_COLOR>>
+participant "NotificationHandler" as NotifHandler <<HANDLER_COLOR>>
+participant "OrderServiceHandler" as OrderHandler <<HANDLER_COLOR>>
+participant "AuditHandler" as AuditHandler <<HANDLER_COLOR>>
+
+== User Creation Flow ==
+
+Client -> UPS: createUser(userData)
+activate UPS
+
+UPS -> UPS: validate(userData)
+note right: Validate input data
+
+UPS -> Repo: save(user)
+activate Repo
+Repo -> DB: INSERT user
+activate DB
+DB --> Repo: success
+deactivate DB
+Repo --> UPS: User created
+deactivate Repo
+
+UPS -> UPS: create UserCreatedEvent
+UPS -> Producer: publishEvent("user-events", userCreatedEvent)
+activate Producer
+Producer -> Kafka: send(topic: "user-events", event)
+activate Kafka
+Kafka --> Producer: ack
+deactivate Kafka
+Producer --> UPS: published
+deactivate Producer
+
+UPS --> Client: User response
+deactivate UPS
+
+== Event Processing Flow ==
+
+Kafka -> Consumer: poll() - UserCreatedEvent
+activate Consumer
+Consumer -> UPS: handleMessage(message)
+activate UPS
+
+UPS -> UPS: deserialize event
+UPS -> UPS: route to handlers
+
+par Parallel Event Handling
+    UPS -> NotifHandler: handle(UserCreatedEvent)
+    activate NotifHandler
+    NotifHandler -> NotifHandler: sendWelcomeEmail()
+    note right: Send welcome email\nto new user
+    NotifHandler --> UPS: handled
+    deactivate NotifHandler
+also
+    UPS -> OrderHandler: handle(UserCreatedEvent)
+    activate OrderHandler
+    OrderHandler -> OrderHandler: notifyOrderService()
+    note right: Notify order service\nabout new user
+    OrderHandler --> UPS: handled
+    deactivate OrderHandler
+also
+    UPS -> AuditHandler: handle(UserCreatedEvent)
+    activate AuditHandler
+    AuditHandler -> AuditHandler: logUserActivity()
+    note right: Log user creation\nfor audit trail
+    AuditHandler --> UPS: handled
+    deactivate AuditHandler
+end
+
+UPS -> Consumer: commit(message)
+Consumer -> Kafka: commit offset
+activate Kafka
+Kafka --> Consumer: committed
+deactivate Kafka
+
+UPS --> Consumer: processed
+deactivate UPS
+deactivate Consumer
+
+== User Update Flow ==
+
+Client -> UPS: updateUser(userId, newUserData)
+activate UPS
+
+UPS -> Repo: findById(userId)
+activate Repo
+Repo -> DB: SELECT user WHERE id = userId
+activate DB
+DB --> Repo: existing user
+deactivate DB
+Repo --> UPS: User found
+deactivate Repo
+
+UPS -> UPS: validate(newUserData)
+
+UPS -> Repo: update(user)
+activate Repo
+Repo -> DB: UPDATE user SET ...
+activate DB
+DB --> Repo: updated
+deactivate DB
+Repo --> UPS: User updated
+deactivate Repo
+
+UPS -> UPS: create UserUpdatedEvent
+UPS -> Producer: publishEvent("user-events", userUpdatedEvent)
+activate Producer
+Producer -> Kafka: send(topic: "user-events", event)
+activate Kafka
+Kafka --> Producer: ack
+deactivate Kafka
+Producer --> UPS: published
+deactivate Producer
+
+UPS --> Client: Updated User response
+deactivate UPS
+
+== Cross-Service Communication ==
+
+note over Kafka: Other services can also\npublish events to Kafka
+
+queue "Order Events Topic" as OrderTopic <<KAFKA_COLOR>>
+participant "Order Service" as OrderService <<SERVICE_COLOR>>
+
+OrderService -> OrderTopic: OrderCreatedEvent
+OrderTopic -> Consumer: poll() - OrderCreatedEvent
+activate Consumer
+
+Consumer -> UPS: handleMessage(orderCreatedEvent)
+activate UPS
+UPS -> UPS: process order event
+note right: Update user's order history\nor loyalty points
+UPS -> Repo: updateUserStats(userId)
+activate Repo
+Repo -> DB: UPDATE user stats
+activate DB
+DB --> Repo: updated
+deactivate DB
+Repo --> UPS: stats updated
+deactivate Repo
+
+UPS -> Consumer: commit(message)
+Consumer -> OrderTopic: commit offset
+UPS --> Consumer: processed
+deactivate UPS
+deactivate Consumer
+
+== Error Handling Flow ==
+
+Client -> UPS: createUser(invalidData)
+activate UPS
+
+UPS -> UPS: validate(userData)
+note right: Validation fails
+
+alt Validation Error
+    UPS --> Client: 400 Bad Request
+else Database Error
+    UPS -> Repo: save(user)
+    activate Repo
+    Repo -> DB: INSERT user
+    activate DB
+    DB --> Repo: error (duplicate email)
+    deactivate DB
+    Repo --> UPS: DatabaseException
+    deactivate Repo
+    
+    UPS -> UPS: log error
+    UPS --> Client: 409 Conflict
+else Kafka Error
+    UPS -> Producer: publishEvent("user-events", event)
+    activate Producer
+    Producer -> Kafka: send event
+    activate Kafka
+    Kafka --> Producer: timeout/error
+    deactivate Kafka
+    Producer --> UPS: KafkaException
+    deactivate Producer
+    
+    UPS -> UPS: log Kafka error
+    note right: User created in DB\nbut event not published\n(compensating action needed)
+    UPS --> Client: 201 Created (with warning)
+end
+
+deactivate UPS
+
+@enduml
