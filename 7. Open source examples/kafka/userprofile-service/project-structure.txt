@@ -1,0 +1,41 @@
+user_profile_service/
+├── CMakeLists.txt
+├── include/
+│   ├── config/
+│   │   ├── ServiceConfig.h
+│   │   └── TopicConfig.h
+│   ├── domain/
+│   │   ├── User.h
+│   │   ├── UserData.h
+│   │   ├── UserEvent.h
+│   │   ├── UserCreatedEvent.h
+│   │   ├── UserUpdatedEvent.h
+│   │   └── UserDeletedEvent.h
+│   ├── kafka/
+│   │   ├── KafkaMessageProducer.h
+│   │   └── KafkaMessageConsumer.h
+│   ├── repository/
+│   │   └── UserRepository.h
+│   ├── handlers/
+│   │   ├── EventHandler.h
+│   │   ├── OrderServiceEventHandler.h
+│   │   ├── NotificationEventHandler.h
+│   │   └── AuditEventHandler.h
+│   └── service/
+│       └── UserProfileService.h
+├── src/
+│   ├── config/
+│   │   ├── ServiceConfig.cpp
+│   │   └── TopicConfig.cpp
+│   ├── domain/
+│   │   └── (event implementations)
+│   ├── kafka/
+│   │   ├── KafkaMessageProducer.cpp
+│   │   └── KafkaMessageConsumer.cpp
+│   ├── repository/
+│   │   └── UserRepository.cpp
+│   ├── handlers/
+│   │   └── (handler implementations)
+│   └── service/
+│       └── UserProfileService.cpp
+└── main.cpp

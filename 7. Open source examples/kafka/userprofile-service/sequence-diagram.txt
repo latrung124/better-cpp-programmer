@@ -1,0 +1,43 @@
+@startuml
+participant Client
+participant UserProfileService
+participant UserRepository
+participant KafkaMessageProducer
+participant Kafka
+participant KafkaMessageConsumer
+participant NotificationEventHandler
+
+' Synchronous user creation
+Client -> UserProfileService: createUser(userData)
+activate UserProfileService
+UserProfileService -> User: new User(userData)
+UserProfileService -> UserRepository: save(user)
+activate UserRepository
+UserRepository -> UserRepository: insert into database
+UserRepository --> UserProfileService: return success
+deactivate UserRepository
+UserProfileService -> UserCreatedEvent: new UserCreatedEvent(user.id, userData)
+UserProfileService -> KafkaMessageProducer: publishEvent("user-events", event)
+activate KafkaMessageProducer
+KafkaMessageProducer -> Kafka: produce message
+deactivate KafkaMessageProducer
+UserProfileService --> Client: return user
+deactivate UserProfileService
+
+' Indicate asynchronous processing
+note over Kafka: Asynchronously, the event is consumed
+
+' Asynchronous event handling
+Kafka -> KafkaMessageConsumer: deliver message
+activate KafkaMessageConsumer
+KafkaMessageConsumer -> UserProfileService: handleMessage(message)
+activate UserProfileService
+UserProfileService -> UserProfileService: event = deserialize(message)
+UserProfileService -> NotificationEventHandler: handle(event)
+activate NotificationEventHandler
+NotificationEventHandler -> NotificationEventHandler: sendWelcomeEmail(event)
+deactivate NotificationEventHandler
+deactivate UserProfileService
+deactivate KafkaMessageConsumer
+
+@enduml
