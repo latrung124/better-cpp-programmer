@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.16)
 
 project(userprofile-service LANGUAGES CXX)
 
@@ -14,7 +14,7 @@ find_package(PkgConfig REQUIRED)
 include(${CMAKE_BINARY_DIR}/conan_toolchain.cmake OPTIONAL)
 
 # Find required packages through Conan
-find_package(cppkafka REQUIRED)
+find_package(modern-cpp-kafka REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 # Include directories
@@ -34,7 +34,7 @@ add_executable(${PROJECT_NAME}
 # Link libraries
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE
-        cppkafka::cppkafka
+        modern-cpp-kafka::modern-cpp-kafka
         nlohmann_json::nlohmann_json
         # Add database libraries if needed
         # SQLite::SQLite3
@@ -51,10 +51,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 # Install rules
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION bin
-)
-
-install(TARGETS ${PROJECT_NAME}_lib
-    ARCHIVE DESTINATION lib
 )
 
 install(DIRECTORY include/

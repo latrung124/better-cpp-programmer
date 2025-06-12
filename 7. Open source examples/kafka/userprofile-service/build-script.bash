@@ -1,11 +1,12 @@
-# Create build directory
-mkdir build && cd build
-
 # Install dependencies (from project root)
-conan install .. --build=missing
+conan install . --output-folder=build --build=missing --remote=conancenter
 
-# Configure with CMake
-cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+chmod +x ./build/build/Release/generators/conanbuild.sh
+./build/build/Release/generators/conanbuild.sh
 
 # Build
-cmake --build .
+cd build
+cmake ..
+cmake .. -G "Unix Makefiles" \
+  -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake \
+  -DCMAKE_BUILD_TYPE=Release
