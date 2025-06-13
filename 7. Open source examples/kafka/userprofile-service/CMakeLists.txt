@@ -21,15 +21,24 @@ find_package(nlohmann_json REQUIRED)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set(INCLUDES
+    include/service/UserProfileService.h
+    include/repository/UserRepository.h
 )
 
 set(SOURCES
+    src/service/UserProfileService.cpp
+    src/repository/UserRepository.cpp
 )
 
 add_executable(${PROJECT_NAME}
     ${INCLUDES}
     ${SOURCES}
     main.cpp)
+
+target_include_directories(${PROJECT_NAME}
+PRIVATE
+    include/repository
+    include/service)
 
 # Link libraries
 target_link_libraries(${PROJECT_NAME} 
