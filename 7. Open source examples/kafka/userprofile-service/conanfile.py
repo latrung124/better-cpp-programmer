@@ -9,6 +9,8 @@ class ExampleRecipe(ConanFile):
     def requirements(self):
         self.requires("modern-cpp-kafka/2024.07.03")
         self.requires("nlohmann_json/3.11.3")
+        self.requires("protobuf/5.27.0")
+        self.requires("sqlitecpp/3.3.2")
 
     def layout(self):
         cmake_layout(self)

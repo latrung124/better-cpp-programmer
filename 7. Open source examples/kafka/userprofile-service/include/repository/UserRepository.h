@@ -8,11 +8,38 @@
 #ifndef USER_REPOSITORY_H
 #define USER_REPOSITORY_H
 
+#include <memory>
+#include <optional>
+#include <vector>
+
+#include "connection/IDatabaseConnection.h"
+#include "utils.h"
+
+class User;
+
 class UserRepository
 {
 public:
+    using ConnectionType = user_profile::utils::database::ConnectionType;
+
     UserRepository();
     ~UserRepository();
+
+    void selectConnection(ConnectionType type);
+    ConnectionType getCurrentConnectionType() const;
+
+    void createTable();
+    void insert(const User& user);
+    void update(const User& user);
+    void remove(const User& user);
+    std::vector<User> getAll();
+    std::optional<User> findById(const std::string& userId);
+    std::optional<User> findByUserName(const std::string& userName);
+    std::optional<User> findByEmail(const std::string& email);
+
+private:
+    std::weak_ptr<IDatabaseConnection> m_connection;
+    ConnectionType m_currentConnectionType;
 };
 
 #endif // USER_REPOSITORY_H

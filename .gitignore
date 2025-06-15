@@ -11,6 +11,7 @@
 *.log
 *.vspscc
 *.vssscc
+*.cmake
 
 #ignore directories
 
@@ -20,3 +21,7 @@ obj
 Debug
 Release
 _Temp
+build
+CMakeFiles
+Makefile
+.vscode

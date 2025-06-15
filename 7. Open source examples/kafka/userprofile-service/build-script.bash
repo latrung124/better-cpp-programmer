@@ -10,3 +10,5 @@ cmake ..
 cmake .. -G "Unix Makefiles" \
   -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake \
   -DCMAKE_BUILD_TYPE=Release
+
+cmake --build .
