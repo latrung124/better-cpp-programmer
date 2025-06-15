@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include <unordered_map>
 
 #include "connection/IDatabaseConnection.h"
 #include "utils.h"
@@ -21,6 +22,8 @@ class UserRepository
 {
 public:
     using ConnectionType = user_profile::utils::database::ConnectionType;
+    using DatabaseConnectionPtr = std::shared_ptr<IDatabaseConnection>;
+    using DatabaseConnectionWPtr = std::weak_ptr<IDatabaseConnection>;
 
     UserRepository();
     ~UserRepository();
@@ -38,7 +41,8 @@ public:
     std::optional<User> findByEmail(const std::string& email);
 
 private:
-    std::weak_ptr<IDatabaseConnection> m_connection;
+    std::unordered_map<ConnectionType, DatabaseConnectionPtr> m_connections;
+    DatabaseConnectionWPtr m_currentConnection;
     ConnectionType m_currentConnectionType;
 };
 

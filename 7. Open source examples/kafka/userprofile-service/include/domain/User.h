@@ -17,19 +17,36 @@ class User
 public:
     using json = nlohmann::json;
     User();
+    User(const std::string& userId, const std::string& userName, const std::string& email, const std::string& createAt, const std::string& updateAt);
+
     ~User();
 
     std::string toJson();
     User fromJson(std::string const &jsonStr);
     bool isValid();
 
+    std::string getUserId() const;
+    void setUserId(const std::string& userId);
+
+    std::string getUserName() const;
+    void setUserName(const std::string& userName);
+
+    std::string getEmail() const;
+    void setEmail(const std::string& email);
+
+    std::string getCreateAt() const;
+    void setCreateAt(const std::string& createAt);
+
+    std::string getUpdateAt() const;
+    void setUpdateAt(const std::string& updateAt);
+
 private:
-    std::string m_id;
+    std::string m_userId;
     std::string m_email;
     std::string m_userName;
     std::string m_avatar;
-    std::string m_createdAt;
-    std::string m_updatedAt;
+    std::string m_createAt;
+    std::string m_updateAt;
 };
 
 #endif // USER_H
