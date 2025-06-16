@@ -50,6 +50,9 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set(INCLUDES
+    include/config/ServiceConfig.h
+    include/config/TopicConfig.h
+
     include/domain/User.h
 
     include/service/UserProfileService.h
@@ -62,6 +65,9 @@ set(INCLUDES
 )
 
 set(SOURCES
+    src/config/ServiceConfig.cpp
+    src/config/TopicConfig.cpp
+
     src/domain/User.cpp
 
     src/service/UserProfileService.cpp
@@ -78,6 +84,7 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME}
 PRIVATE
+    include/config
     include/domain
     include/repository
     include/service
