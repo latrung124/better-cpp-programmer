@@ -13,8 +13,14 @@
 #include <unordered_map>
 #include <optional>
 
-class TopicConfig;
+#include "TopicConfig.h"
 
+/**
+ * @brief ServiceConfig class
+ * This class is used to manage the configuration of the service, including Kafka settings,
+ * database settings, and other service-specific configurations.
+ * It can load configurations from a file or environment variables and validate them.
+ */
 class ServiceConfig
 {
 private:
@@ -24,17 +30,18 @@ private:
     std::string mKafkaClientId;
 
     /// @brief  Database configuration
-    std::string databaseUrl;
-    std::string databaseType;
-    int maxDatabaseConnections;
-    int databaseConnectionTimeout;
+    std::string mDatabaseUrl;
+    std::string mDatabaseType;
+    int mMaxDatabaseConnections;
+    int mDatabaseConnectionTimeout;
 
     /// @brief Service Configuration
     std::string mServiceName;
     std::string mServiceVersion;
     int mServicePort;
 
-    std::unique_ptr<TopicConfig> mTopicConfig;
+    /// @brief Topic configuration
+    TopicConfig mTopicConfig;
 
     /// @brief kafka specific settings
     std::unordered_map<std::string, std::string> mKafkaConsumerConfig;
@@ -47,6 +54,7 @@ private:
     bool mEnableIdempotence;
 
 public:
+    /// @brief Constructor and Destructor
     ServiceConfig();
     ~ServiceConfig();
 
@@ -63,53 +71,92 @@ public:
     /**
      * @brief Validate the entire configuration
      */
-    bool validate() const;
+    bool isValid() const;
 
     // Kafka getters
-    const std::string& getKafkaBrokers() const;
-    const std::string& getKafkaGroupId() const;
-    const std::string& getKafkaClientId() const;
+    [[nodiscard]] const std::string& getKafkaBroker() const;
+    [[nodiscard]] const std::string& getKafkaGroupId() const;
+    [[nodiscard]] const std::string& getKafkaClientId() const;
 
     // Kafka setters
-    void setKafkaBrokers(const std::string& brokers);
+    void setKafkaBroker(const std::string& broker);
     void setKafkaGroupId(const std::string& groupId);
     void setKafkaClientId(const std::string& clientId);
 
     // Service getters
-    const std::string& getServiceName() const;
-    const std::string& getServiceVersion() const;
-    int getServicePort() const;
-    const std::string& getLogLevel() const;
+    [[nodiscard]] const std::string& getServiceName() const;
+    [[nodiscard]] const std::string& getServiceVersion() const;
+    [[nodiscard]] int getServicePort() const;
+    [[nodiscard]] const std::string& getLogLevel() const;
 
-    // Service setters
+    /**
+     * @brief Set the service name
+     * @param name Service name
+     */
     void setServiceName(const std::string& name);
+
+    /**
+     * @brief Set the service version
+     * @param version Service version
+     */
     void setServiceVersion(const std::string& version);
+
+    /**
+     * @brief Set the service port
+     * @param port Service port
+     */
     void setServicePort(int port);
+
+    /**
+     * @brief Set the log level
+     * @param level Log level (e.g., "DEBUG", "INFO", "WARN", "ERROR")
+     */
     void setLogLevel(const std::string& level);
 
-    // Topic configuration
+    /**
+     * @brief Get the topic configuration
+     * @return Reference to the TopicConfig object
+     */
     TopicConfig& getTopicConfig();
-    const TopicConfig& getTopicConfig() const;
-    void setTopicConfig(std::unique_ptr<TopicConfig> config);
 
+    /**
+     * @brief Set Kafka producer and consumer configurations
+     * @param key Configuration key
+     * @param value Configuration value
+     */
     void setKafkaProducerConfig(const std::string& key, const std::string& value);
+
+    /**
+     * @brief Get Kafka producer and consumer configurations
+     * @param key Configuration key
+     */
     void setKafkaConsumerConfig(const std::string& key, const std::string& value);
+
+    /**
+     * @brief Get Kafka producer and consumer configurations
+     * @param key Configuration key
+     * @return Optional string containing the configuration value if it exists
+     */
     std::optional<std::string> getKafkaProducerConfig(const std::string& key) const;
+    
+    /**
+     * @brief Get Kafka consumer configurations
+     * @param key Configuration key
+     * @return Optional string containing the configuration value if it exists
+     */
     std::optional<std::string> getKafkaConsumerConfig(const std::string& key) const;
 
+    /**
+     * @brief Get all Kafka producer and consumer configurations
+     * @return Unordered map containing all configurations
+     */
     const std::unordered_map<std::string, std::string>& getAllKafkaProducerConfig() const;
+    
+    /**
+     * @brief Get all Kafka consumer configurations
+     * @return Unordered map containing all configurations
+     */
     const std::unordered_map<std::string, std::string>& getAllKafkaConsumerConfig() const;
-
-    /// @brief Performance settings
-    int getProducerBatchSize() const;
-    int getConsumerPollTimeout() const;
-    int getEventHandlerThreads() const;
-    bool isIdempotenceEnabled() const;
-
-    void setProducerBatchSize(int batchSize);
-    void setConsumerPollTimeout(int timeout);
-    void setEventHandlerThreads(int threads);
-    void setIdempotenceEnabled(bool enabled);
 };
 
 #endif // SERVICE_CONFIG_H
