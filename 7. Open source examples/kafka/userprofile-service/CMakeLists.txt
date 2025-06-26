@@ -55,6 +55,13 @@ set(INCLUDES
 
     include/domain/User.h
 
+    include/event/Event.h
+
+    include/handlers/Handler.h
+    include/handlers/AuditEventHandler.h
+    include/handlers/NotificationEventHandler.h
+    include/handlers/OrderEventHandler.h
+
     include/service/UserProfileService.h
 
     include/repository/UserRepository.h
@@ -69,6 +76,10 @@ set(SOURCES
     src/config/TopicConfig.cpp
 
     src/domain/User.cpp
+
+    src/handlers/AuditEventHandler.cpp
+    src/handlers/NotificationEventHandler.cpp
+    src/handlers/OrderEventHandler.cpp
 
     src/service/UserProfileService.cpp
 
@@ -86,6 +97,8 @@ target_include_directories(${PROJECT_NAME}
 PRIVATE
     include/config
     include/domain
+    include/event
+    include/handlers
     include/repository
     include/service
     include/proto

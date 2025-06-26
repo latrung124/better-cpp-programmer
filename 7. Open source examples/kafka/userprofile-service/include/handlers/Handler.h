@@ -10,6 +10,11 @@
 
 class Event;
 
+/**
+ * @brief Handler class
+ * This class is responsible for handling events.
+ * It provides a virtual method handleEvent that can be overridden by derived classes.
+ */
 class Handler
 {
 public:
