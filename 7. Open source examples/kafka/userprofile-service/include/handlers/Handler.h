@@ -8,7 +8,7 @@
 #ifndef HANDLER_H
 #define HANDLER_H
 
-class Event;
+struct Event;
 
 /**
  * @brief Handler class

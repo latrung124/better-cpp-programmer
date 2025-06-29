@@ -24,7 +24,20 @@ enum class ConnectionType : uint16_t
     ePostgresql = 1
 };
 
-} // user_profile::utils
+} // user_profile::utils::database
+
+namespace event
+{
+
+enum class EventType : uint16_t
+{
+    eUnknown = 0,
+    eUserCreated = 1,
+    eUserUpdated = 2,
+    eUserDeleted = 3
+};
+
+} // user_profile::utils::event
 
 } // user_profile::utils
 

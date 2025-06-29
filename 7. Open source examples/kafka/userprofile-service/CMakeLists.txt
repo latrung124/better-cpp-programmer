@@ -77,6 +77,8 @@ set(SOURCES
 
     src/domain/User.cpp
 
+    src/event/Event.cpp
+
     src/handlers/AuditEventHandler.cpp
     src/handlers/NotificationEventHandler.cpp
     src/handlers/OrderEventHandler.cpp
