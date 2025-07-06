@@ -73,6 +73,9 @@ set(INCLUDES
     include/repository/connection/SQLiteConnection.h
     
     include/utils/utils.h
+
+    include/logger/LogLevel.h
+    include/logger/LoggerStream.h
 )
 
 set(SOURCES
