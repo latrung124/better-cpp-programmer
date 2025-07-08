@@ -56,6 +56,7 @@ set(INCLUDES
     include/config/TopicConfig.h
 
     include/kafka-integration/KafkaMessageProducer.h
+    include/kafka-integration/KafkaMessageConsumer.h
 
     include/domain/User.h
 
@@ -83,6 +84,7 @@ set(SOURCES
     src/config/TopicConfig.cpp
 
     src/kafka-integration/KafkaMessageProducer.cpp
+    src/kafka-integration/KafkaMessageConsumer.cpp
 
     src/domain/User.cpp
 
